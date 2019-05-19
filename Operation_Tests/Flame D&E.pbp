@@ -1,0 +1,36 @@
+DEFINE ADC_BITS 8
+DEFINE ADC_CLOCK 3
+DEFINE ADC_SAMPLEUS 50
+
+define LCD_DREG PORTC   'setting LCD Data port
+define LCD_DBIT 4       'setting starting Data bit(0 or 4) if 4-bit bus
+define LCD_RSREG PORTC  'setting LCD Register Select port
+define LCD_RSBIT 3      'setting LCD Register Select bit
+define LCD_EREG PORTC
+define LCD_EBIT 2
+define LCD_RWREG PORTE
+define LCD_RWBIT 2
+define LCD_BITS 4
+define LCD_LINES 2
+define LCD_COMMANDUS 2000
+define LCD_DATAUS 50
+define OSC 4
+
+TRISA = %11111111
+TRISB = %00000000
+TRISD = %00000001
+pause 100
+
+F var byte
+
+Main:
+    portb.5 = 1
+    ADCON1=0    
+    adcin 0,F    
+    lcdout $fe,1,"Front = ",#F
+    if f<100 then
+    portb = %11110000
+    endif
+    pause 100
+    goto main  
+

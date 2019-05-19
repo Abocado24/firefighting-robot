@@ -1,0 +1,9 @@
+TRISB = %00000000
+pause 500
+
+Main:
+    portb = %00100000
+    pause 1500
+    portb = %00000000
+    pause 1500
+    goto main

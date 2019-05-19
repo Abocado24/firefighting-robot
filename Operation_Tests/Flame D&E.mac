@@ -1,0 +1,66 @@
+
+	NOLIST
+; PICBASIC PRO(TM) Compiler 2.50a, (c) 1998, 2007 microEngineering Labs, Inc. All Rights Reserved.  
+
+LABEL?L macro Label
+        RST?RP
+    ifdef PM_USED
+        LALL
+Label
+        XALL
+    else
+Label
+    endif
+    endm
+
+CMPGE?BCL macro Bin, Cin, Label
+    if ((Cin) <= 0)
+        L?GOTO  Label
+    else
+      if ((Cin) < 100h)
+        CLRWDT?
+        MOVE?CA Cin
+        CHK?RP  Bin
+        subwf   Bin, W
+        BIT?GOTO 1, STATUS, C, Label
+      endif
+    endif
+    endm
+
+ADCIN?CB macro Cin, Bout
+        movlw   Cin
+        L?CALL  ADCIN
+        MOVE?AB Bout
+    endm
+ADCIN_USED = 1
+
+GOTO?L macro Label
+        L?GOTO  Label
+    endm
+
+LCDOUT?C macro Cin
+        movlw   Cin
+        L?CALL  LCDOUT
+    endm
+LCDOUT_USED = 1
+
+LCDOUTD?B macro Bin
+        MOVE?BA Bin
+        L?CALL  LCDOUTDEC
+    endm
+LCDOUTDEC_USED = 1
+
+PAUSE?C macro Cin
+    if (((Cin) >> 8) == 0)
+        MOVE?CA Cin
+        L?CALL  PAUSE
+    else
+        MOVE?CB (Cin) >> 8, R1 + 1
+        MOVE?CA low (Cin)
+        L?CALL  PAUSEL
+    endif
+    endm
+PAUSE_USED = 1
+
+
+	LIST

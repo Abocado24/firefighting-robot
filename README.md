@@ -1,0 +1,2 @@
+# Firefighting Robot
+A high school project where a custom robot powered by a PIC 16F887 microcontroller searches for a lighted candle in a maze and extinguishes it. The maze was modelled after that of the [Trinity College Int'L Firefighting Home Robot Contest](https://trinityrobotcontest.org). This repository contains the assembly code used to control the robot, the PCB file used to power the bot and control its functions, and a list of material components and their costs.

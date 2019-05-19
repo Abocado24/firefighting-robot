@@ -1,0 +1,235 @@
+DEFINE ADC_BITS 8 'Initializing bits, internal oscilator, etc. for the chip
+DEFINE ADC_CLOCK 3
+DEFINE ADC_SAMPLEUS 50
+
+define LCD_DREG PORTC 'Initializing ports, bits and other data for the LCD
+define LCD_DBIT 4
+define LCD_RSREG PORTC
+define LCD_RSBIT 3
+define LCD_EREG PORTC
+define LCD_EBIT 2  
+define LCD_RWREG PORTE
+define LCD_RWBIT 2
+define LCD_BITS 4
+define LCD_LINES 2
+define LCD_COMMANDUS 2000
+define LCD_DATAUS 50
+define OSC 4
+
+TRISA = %11111111 'Initializing digital inputs, motors and line detection
+TRISB = %00000000
+TRISD = %00000001
+
+Flame var byte 'Initializing variables for values from , left and front distance sensors
+FlamePrev var byte
+FlameDiff var byte
+Front var byte
+FrontPrev var byte
+FrontDiff var byte
+Left var byte
+LeftPrev var byte
+LeftDiff var byte
+NumCandles var byte 'Initializing counter variables
+NumCandles=0
+i var byte
+i=0
+n var byte
+n=0
+
+'Navigate through the four rooms of the maze and search for the lighted candle
+Main:
+    while LeftDiff<120
+        gosub getSensors
+        gosub wallEcho
+    wend
+    gosub chargeForward
+    pause 200
+    while Left>25
+        gosub getSensors
+        gosub turnLeft
+        i=i+1
+    wend
+    while Front<80
+        gosub getSensors
+        gosub turnLeft
+        i=i+1
+    wend
+    NumCandles=2
+    gosub getSensors
+    if Flame<235 then goto flameGet
+
+    for n=0 to i
+        gosub getSensors
+        gosub turnRight
+        pause 10
+    next n
+    NumCandles=3
+    if Flame<220 and Flame>40 then goto flameGet
+    for n=0 to i
+        gosub getSensors
+        gosub turnRight
+    next n
+    NumCandles=4
+goto flameGet
+
+'Extinguish a candle once it has been located
+flameGet:
+    if NumCandles<5 then
+        if NumCandles!=4 then
+            gosub turnRight
+            pause 20
+            while Front>55 or Left<50 and NumCandles!=3
+                gosub getSensors
+                gosub chargeForward
+            wend
+            while Front>15 or Flame>15
+                gosub getSensors
+                gosub wallStick
+            wend
+        endif
+        if NumCandles=4 then
+            while LeftDiff<120
+                gosub getSensors
+                gosub chargeForward
+            wend
+            while portd.0=1
+                gosub getSensors
+                gosub wallStick
+            wend
+            portb = %11110000
+            pause 500
+        endif
+    endif
+    if NumCandles<4 then NumCandles=10
+    if NumCandles=4 then NumCandles=11
+    gosub getSensors
+    portb = %11111001
+    pause 20
+    portb = %11110000
+    pause 20
+    if Flame<10 and NumCandles!=11 then portb = %11110101
+    pause 20
+gosub flameGet
+
+'An algorithm for the bot to travel alongside the left-hand walls of the maze in a straight line
+wallStick:
+    'Turning the bot around when it hits a corner
+    if Front<13 then
+        'Turn until the bot is no longer directly in front of a wall
+        while Front<25
+            gosub getSensors
+            lcdout $fe,$C0,"Right"
+            portb = %00001001
+            pause 20
+        wend
+        'Reset the path of the bot by going forward until the left sensor is at a normal distance from the wall again
+        while Left<12 or LeftDiff<100
+            gosub getSensors
+            gosub chargeForward
+        wend
+    endif
+    'The bot is too close to the wall
+    if Left<10 then
+        lcdout $fe,$C0,"Right"
+        portb = %00000101
+        pause 24
+        portb = %00000001
+        pause 1
+    endif
+    'The bot is too far from the wall
+    if Left>12 then
+        lcdout $fe,$C0,"Left"
+        portb = %00000101
+        pause 34
+        portb = %00000100
+        pause 1
+    endif
+    'The bot is 10-12cm from the wall (Ideal range so the bot is close but still moves straight)
+    if Left=10 or Left=11 or Left=12 then
+        lcdout $fe,$C0,"Straight"
+        portb = %00000101
+        pause 20
+    endif
+return
+
+'A variation of wallStick with a drastically reduced turning ratio (Can't pass variables into PBP functions)
+wallEcho:
+    if Front<13 then
+            while Front<30
+                    gosub getSensors
+                    lcdout $fe,$C0,"Right"
+                    portb = %00001001
+                    pause 20
+            wend
+            while Left<12 or LeftDiff<100
+                gosub getSensors
+                gosub chargeForward
+            wend
+    endif
+    if Left<10 then
+        lcdout $fe,$C0,"Right"
+        portb = %00000101
+        pause 74
+        portb = %00000001
+        pause 1
+    endif
+    if Left>12 then
+        lcdout $fe,$C0,"Left"
+        portb = %00000101
+        pause 74
+        portb = %00000100
+        pause 1
+    endif
+    if Left=10 or Left=11 or Left=12 then
+        lcdout $fe,$C0,"Straight"
+        portb = %00000101
+        pause 75
+    endif
+return
+
+'Return sensor readings and display to LCD
+getSensors:
+    LeftPrev = Left
+    FrontPrev = Front
+    FPrev = Flame
+    ADCON1 = 0
+    adcin 0, Flame
+    adcin 1, Left
+    adcin 2, Front
+    Left = ((6787/(Left-3))-4)/5
+    Front = ((6787/(Front-3))-4)/5
+    LeftDiff = Left - LeftPrev + 100
+    FrontDiff = Front - FrontPrev + 100
+    FDiff = Flame - FPrev + 100
+    lcdout $fe,1,"F",#Front
+    lcdout $fe,$14,"L",#Left
+    lcdout $fe,$14,"F",#Flame
+    lcdout $fe,$14,"C",#NumCandles
+return
+
+check:
+    portb = %00000000
+    pause 500
+return
+
+chargeForward:
+    lcdout $fe,$C0,"Charge"
+    portb = %00000101
+    pause 20
+return
+
+turnRight:
+    lcdout $fe,$C0,"Right"
+    portb = %00001001
+    pause 20
+    portb = %00000000
+    pause 5
+return
+
+turnLeft:
+    lcdout $fe,$C0,"Left"
+    portb = %00000110
+    pause 20
+    portb = %00000000
+    pause 5
+return

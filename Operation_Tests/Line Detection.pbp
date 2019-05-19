@@ -1,0 +1,13 @@
+TRISD = %00000001
+TRISB = %00000000
+pause 100
+Main:
+    if portd.0=0 then 
+    portb = %00101010
+    endif
+    
+    if portd.0=1 then
+    portb = %00000101
+    endif
+    pause 500
+    goto main  

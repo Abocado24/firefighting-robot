@@ -1,0 +1,109 @@
+
+	NOLIST
+; PICBASIC PRO(TM) Compiler 2.50a, (c) 1998, 2007 microEngineering Labs, Inc. All Rights Reserved.  
+
+LABEL?L macro Label
+        RST?RP
+    ifdef PM_USED
+        LALL
+Label
+        XALL
+    else
+Label
+    endif
+    endm
+
+DIV?CWW macro Cin, Win, Wout
+        MOVE?CW Cin, R0
+        MOVE?WW Win, R1
+        L?CALL  DIV
+        MOVE?AWW R0, Wout
+    endm
+DIV_USED = 1
+
+DIV?WCB macro Win, Cin, Bout
+    if ((Cin) == 2)
+        CHK?RP  Win
+        rrf     (Win) + 1, W
+        rrf     Win, W
+        MOVE?AB Bout
+    else
+        MOVE?WW Win, R0
+        MOVE?CW Cin, R1
+        L?CALL  DIV
+        MOVE?AB Bout
+    endif
+    endm
+DIV_USED = 1
+
+SUB?BCW macro Bin, Cin, Wout
+        movlw   low (-(Cin))
+        CHK?RP  Bin
+        addwf   Bin, W
+        MOVE?AB Wout
+        movlw   low ((-(Cin)) >> 8)
+        btfsc   STATUS, C
+        addlw   1
+        movwf   (Wout) + 1
+    endm
+
+SUB?WCW macro Win, Cin, Wout
+    if ((Wout) == (Win))
+        movlw   low (Cin)
+        CHK?RP  Wout
+        subwf   Wout, F
+        movlw   (Cin) >> 8
+        btfss   STATUS, C
+        addlw   1
+        subwf   (Wout) + 1, F
+    else
+        movlw   low (Cin)
+        CHK?RP  Win
+        subwf   Win, W
+        MOVE?AB Wout
+        movlw   (Cin) >> 8
+        btfss   STATUS, C
+        addlw   1
+        CHK?RP  Win
+        subwf   (Win) + 1, W
+        MOVE?AB (Wout) + 1
+    endif
+    endm
+
+ADCIN?CB macro Cin, Bout
+        movlw   Cin
+        L?CALL  ADCIN
+        MOVE?AB Bout
+    endm
+ADCIN_USED = 1
+
+GOTO?L macro Label
+        L?GOTO  Label
+    endm
+
+LCDOUT?C macro Cin
+        movlw   Cin
+        L?CALL  LCDOUT
+    endm
+LCDOUT_USED = 1
+
+LCDOUTD?B macro Bin
+        MOVE?BA Bin
+        L?CALL  LCDOUTDEC
+    endm
+LCDOUTDEC_USED = 1
+
+PAUSE?C macro Cin
+    if (((Cin) >> 8) == 0)
+        MOVE?CA Cin
+        L?CALL  PAUSE
+    else
+        MOVE?CB (Cin) >> 8, R1 + 1
+        MOVE?CA low (Cin)
+        L?CALL  PAUSEL
+    endif
+    endm
+PAUSE_USED = 1
+
+
+	LIST
